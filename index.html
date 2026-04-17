@@ -2,70 +2,117 @@
 <html>
   <head>
     <title>Movie Tracker</title>
+
+    <style>
+      body {
+        font-family: Arial;
+        background: #f4f4f4;
+        padding: 40px;
+        text-align: center;
+      }
+
+      .box {
+        background: white;
+        padding: 20px;
+        max-width: 500px;
+        margin: auto;
+        border-radius: 10px;
+      }
+
+      input {
+        width: 90%;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      .result {
+        text-align: left;
+        padding: 8px;
+        cursor: pointer;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .result:hover {
+        background: #eee;
+      }
+
+      img {
+        width: 100%;
+        border-radius: 8px;
+      }
+
+      button {
+        padding: 10px 20px;
+        background: black;
+        color: white;
+        border: none;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
-    <h2>Movie Tracker</h2>
+    <div class="box">
+      <h2>🎬 Movie Tracker</h2>
 
-    <input id="search" placeholder="Search movie..." oninput="searchMovies()" />
+      <input
+        id="search"
+        placeholder="Search movie..."
+        oninput="searchMovies()"
+      />
 
-    <div id="results"></div>
+      <div id="results"></div>
 
-    <h3>Selected Movie</h3>
-    <div id="selected"></div>
+      <div id="preview"></div>
 
-    <button onclick="addMovie()">Add to Notion</button>
+      <button onclick="addMovie()">Add to Notion</button>
 
-    <p id="status"></p>
+      <p id="status"></p>
+    </div>
 
     <script>
       let selectedMovie = null;
-      let debounceTimer;
+      let debounce;
 
-      // 🔍 SEARCH
       function searchMovies() {
-        clearTimeout(debounceTimer);
+        clearTimeout(debounce);
 
-        debounceTimer = setTimeout(async () => {
-          const query = document.getElementById("search").value;
+        debounce = setTimeout(async () => {
+          const q = document.getElementById("search").value;
+          if (!q) return;
 
-          if (!query) return;
-
-          const res = await fetch(`/api/search?query=${query}`);
+          const res = await fetch(`/api/search?query=${q}`);
           const data = await res.json();
 
           const container = document.getElementById("results");
           container.innerHTML = "";
 
-          data.results.forEach((movie) => {
+          data.results.forEach((m) => {
             const div = document.createElement("div");
-
-            div.innerHTML = `
-        <img src="${movie.poster}" width="50"/>
-        <strong>${movie.title}</strong> (${movie.year})
-      `;
-
-            div.style.cursor = "pointer";
-            div.onclick = () => selectMovie(movie);
-
+            div.className = "result";
+            div.innerHTML = `${m.title} (${m.year})`;
+            div.onclick = () => selectMovie(m);
             container.appendChild(div);
           });
         }, 300);
       }
 
-      // 🎬 SELECT
-      function selectMovie(movie) {
-        selectedMovie = movie;
+      function selectMovie(m) {
+        selectedMovie = m;
 
-        document.getElementById("selected").innerHTML = `
-    <img src="${movie.poster}" width="100"/><br/>
-    <strong>${movie.title}</strong> (${movie.year})
+        document.getElementById("preview").innerHTML = `
+    <img src="${m.poster}" />
+    <h3>${m.title} (${m.year})</h3>
+    <p><b>Genre:</b> ${m.genre}</p>
+    <p><b>Actors:</b> ${m.actors}</p>
+    <p><b>Rating:</b> ${m.rating}</p>
+    <p>${m.plot}</p>
   `;
       }
 
-      // ➕ ADD (FIXED → uses imdbID)
       async function addMovie() {
         if (!selectedMovie) {
-          alert("Select a movie first");
+          alert("Select a movie");
           return;
         }
 
@@ -79,9 +126,9 @@
 
         const data = await res.json();
 
-        document.getElementById("status").innerText = data.success
-          ? "✅ Added to Notion"
-          : "❌ Error: " + data.error;
+        document.getElementById("status").innerText = res.ok
+          ? "✅ Added"
+          : "❌ " + data.error;
       }
     </script>
   </body>
