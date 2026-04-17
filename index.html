@@ -5,71 +5,122 @@
 
     <style>
       body {
-        font-family: Arial;
-        background: #f4f4f4;
-        padding: 40px;
-        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+        background: #fafafa;
+        margin: 0;
+        padding: 40px 20px;
       }
 
-      .box {
-        background: white;
-        padding: 20px;
-        max-width: 500px;
+      .container {
+        max-width: 600px;
         margin: auto;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h2 {
+        font-weight: 600;
+        margin-bottom: 20px;
       }
 
       input {
-        width: 90%;
-        padding: 10px;
-        margin-bottom: 10px;
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+        outline: none;
+      }
+
+      input:focus {
+        border-color: #999;
+      }
+
+      .results {
+        margin-top: 10px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        background: white;
+        overflow: hidden;
       }
 
       .result {
-        text-align: left;
-        padding: 8px;
+        display: flex;
+        gap: 10px;
+        padding: 10px;
         cursor: pointer;
-        border-bottom: 1px solid #ddd;
+        align-items: center;
+        border-bottom: 1px solid #f0f0f0;
       }
 
       .result:hover {
-        background: #eee;
+        background: #f5f5f5;
       }
 
-      img {
+      .result img {
+        width: 40px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+
+      .result-text {
+        font-size: 14px;
+      }
+
+      .preview {
+        margin-top: 20px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 15px;
+      }
+
+      .preview img {
         width: 100%;
         border-radius: 8px;
+        margin-bottom: 10px;
+      }
+
+      .meta {
+        font-size: 13px;
+        color: #555;
+        margin-bottom: 8px;
       }
 
       button {
-        padding: 10px 20px;
+        margin-top: 15px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: none;
         background: black;
         color: white;
-        border: none;
-        margin-top: 10px;
+        font-size: 14px;
         cursor: pointer;
+      }
+
+      button:hover {
+        opacity: 0.9;
       }
 
       #status {
         margin-top: 10px;
-        font-weight: bold;
+        font-size: 14px;
       }
     </style>
   </head>
+
   <body>
-    <div class="box">
+    <div class="container">
       <h2>🎬 Movie Tracker</h2>
 
       <input
         id="search"
-        placeholder="Search movie and press Enter"
+        placeholder="Search movie and press Enter..."
         onkeydown="handleKey(event)"
       />
 
-      <div id="results"></div>
+      <div id="results" class="results"></div>
 
-      <div id="preview"></div>
+      <div id="preview" class="preview"></div>
 
       <button onclick="addMovie()">Add to Notion</button>
 
@@ -89,13 +140,13 @@
         const q = document.getElementById("search").value.trim();
         if (!q) return;
 
-        document.getElementById("results").innerHTML = "Searching...";
+        const container = document.getElementById("results");
+        container.innerHTML = "Searching...";
 
         try {
           const res = await fetch(`/api/search?query=${q}`);
           const data = await res.json();
 
-          const container = document.getElementById("results");
           container.innerHTML = "";
 
           if (!data.results || data.results.length === 0) {
@@ -106,13 +157,20 @@
           data.results.forEach((m) => {
             const div = document.createElement("div");
             div.className = "result";
-            div.innerHTML = `<strong>${m.title}</strong> (${m.year})`;
+
+            div.innerHTML = `
+        <img src="${m.poster !== "N/A" ? m.poster : ""}" />
+        <div class="result-text">
+          <strong>${m.title}</strong><br/>
+          ${m.year}
+        </div>
+      `;
+
             div.onclick = () => selectMovie(m);
             container.appendChild(div);
           });
         } catch (err) {
-          document.getElementById("results").innerHTML =
-            "Error loading results";
+          container.innerHTML = "Error loading results";
         }
       }
 
@@ -122,9 +180,9 @@
         document.getElementById("preview").innerHTML = `
     <img src="${m.poster}" />
     <h3>${m.title} (${m.year})</h3>
-    <p><b>Genre:</b> ${m.genre}</p>
-    <p><b>Actors:</b> ${m.actors}</p>
-    <p><b>Rating:</b> ${m.rating}</p>
+    <div class="meta"><b>Genre:</b> ${m.genre}</div>
+    <div class="meta"><b>Actors:</b> ${m.actors}</div>
+    <div class="meta"><b>Rating:</b> ⭐ ${m.rating}</div>
     <p>${m.plot}</p>
   `;
       }
