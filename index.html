@@ -17,6 +17,7 @@
         max-width: 500px;
         margin: auto;
         border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       }
 
       input {
@@ -49,6 +50,11 @@
         margin-top: 10px;
         cursor: pointer;
       }
+
+      #status {
+        margin-top: 10px;
+        font-weight: bold;
+      }
     </style>
   </head>
   <body>
@@ -57,8 +63,8 @@
 
       <input
         id="search"
-        placeholder="Search movie..."
-        oninput="searchMovies()"
+        placeholder="Search movie and press Enter"
+        onkeydown="handleKey(event)"
       />
 
       <div id="results"></div>
@@ -72,29 +78,42 @@
 
     <script>
       let selectedMovie = null;
-      let debounce;
 
-      function searchMovies() {
-        clearTimeout(debounce);
+      function handleKey(e) {
+        if (e.key === "Enter") {
+          searchMovies();
+        }
+      }
 
-        debounce = setTimeout(async () => {
-          const q = document.getElementById("search").value;
-          if (!q) return;
+      async function searchMovies() {
+        const q = document.getElementById("search").value.trim();
+        if (!q) return;
 
+        document.getElementById("results").innerHTML = "Searching...";
+
+        try {
           const res = await fetch(`/api/search?query=${q}`);
           const data = await res.json();
 
           const container = document.getElementById("results");
           container.innerHTML = "";
 
+          if (!data.results || data.results.length === 0) {
+            container.innerHTML = "No results found";
+            return;
+          }
+
           data.results.forEach((m) => {
             const div = document.createElement("div");
             div.className = "result";
-            div.innerHTML = `${m.title} (${m.year})`;
+            div.innerHTML = `<strong>${m.title}</strong> (${m.year})`;
             div.onclick = () => selectMovie(m);
             container.appendChild(div);
           });
-        }, 300);
+        } catch (err) {
+          document.getElementById("results").innerHTML =
+            "Error loading results";
+        }
       }
 
       function selectMovie(m) {
@@ -112,7 +131,7 @@
 
       async function addMovie() {
         if (!selectedMovie) {
-          alert("Select a movie");
+          alert("Select a movie first");
           return;
         }
 
@@ -127,7 +146,7 @@
         const data = await res.json();
 
         document.getElementById("status").innerText = res.ok
-          ? "✅ Added"
+          ? "✅ Added to Notion"
           : "❌ " + data.error;
       }
     </script>
