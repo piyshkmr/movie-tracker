@@ -9,22 +9,14 @@ export default async function handler(req, res) {
   const NOTION_API_KEY = process.env.NOTION_API_KEY;
   const DATABASE_ID = process.env.DATABASE_ID;
 
-  if (!imdbID) {
-    return res.status(400).json({ error: "Missing imdbID" });
-  }
-
   try {
-    // 🎯 Fetch exact movie using imdbID
+    // Fetch movie
     const omdbRes = await fetch(
       `https://www.omdbapi.com/?i=${imdbID}&apikey=${OMDB_API_KEY}`,
     );
     const movie = await omdbRes.json();
 
-    if (movie.Response === "False") {
-      return res.status(404).json({ error: "Movie not found" });
-    }
-
-    // 📥 Add to Notion
+    // Send to Notion
     const notionRes = await fetch("https://api.notion.com/v1/pages", {
       method: "POST",
       headers: {
@@ -51,10 +43,11 @@ export default async function handler(req, res) {
       }),
     });
 
-    const data = await notionRes.json();
+    const text = await notionRes.text();
 
-    res.status(200).json({ success: true, data });
+    // 🔥 THIS WILL SHOW REAL ERROR
+    return res.status(notionRes.status).send(text);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
